@@ -36,16 +36,7 @@ def align_paragraphs(sn2vn_content,vn_content):
             })
     return alignment_results
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser('Multimodal Alignment',
-                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-    parser.add_argument('--input', type=str, required=True,
-                        help='path_to_bitext_document')
-
-    args = parser.parse_args()
-    # read the content of 2 pdf files: nom and viet
-    input_file = args.input
+def processing(input_file):
     sn_content, vn_content = bitext.get_content_from_bitext(input_file)
     # get the transliteration of sino-nom content
     sn2vn_content = list()
@@ -60,9 +51,7 @@ if __name__ == "__main__":
         worksheet   = workbook.add_worksheet(f"Result")
         font_format = workbook.add_format({'font_name': 'Nom Na Tong'})
         red         = workbook.add_format({'color': 'red', 'font_name': 'Nom Na Tong'})
-        yellow      = workbook.add_format({'color': 'yellow', 'font_name': 'Nom Na Tong'})
         blue        = workbook.add_format({'color': 'blue', 'font_name': 'Nom Na Tong'})
-        green       = workbook.add_format({'color': 'green', 'font_name': 'Nom Na Tong'})
         black       = workbook.add_format({'color': 'black', 'font_name': 'Nom Na Tong'})
         worksheet.write(0, 0, 'page_id', font_format)
         worksheet.write(0, 1, 'bbox', font_format)
@@ -124,5 +113,4 @@ if __name__ == "__main__":
                 if len(qns)>0:
                     qns.extend((' ',' '))
                     worksheet.write_rich_string(row_id, 4, *qns)
-                row_id =  row_id + 1
-    print('Output file is save to ', output_file)     
+                row_id =  row_id + 1  
