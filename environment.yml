@@ -1,0 +1,27 @@
+name: mm_align
+channels:
+  - defaults
+  - conda-forge
+  - anaconda
+dependencies:
+  - pip==23.0
+  - python==3.10
+  - numpy
+  - cython
+  - sentencepiece
+  - pip:
+    - pillow
+    - poppler-utils
+    - pandas
+    - mcerp 
+    - unicategories
+    - fairseq
+    - scikit-learn
+    - pdf2image
+    - tensorboardX
+    - openpyxl
+    - xlsxwriter
+    - openai
+    - python-dotenv
+    - pdfplumber
+    - unidecode
