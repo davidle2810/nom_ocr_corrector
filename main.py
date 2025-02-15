@@ -1,11 +1,11 @@
 from flask import Flask, request, send_file
 import core.alignment
 import os
-
+import shutil
 app = Flask(__name__)
 
 # Define the upload folder and allowed file types
-UPLOAD_FOLDER = 'uploads'
+UPLOAD_FOLDER = 'data'
 ALLOWED_EXTENSIONS = {'pdf'}  # Add more types as needed
 
 # Ensure the upload folder exists
@@ -31,9 +31,9 @@ def upload_file():
     if file and allowed_file(file.filename):
         filename = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
         file.save(filename)
-        core.alignment.processing(filename)
+        #core.alignment.processing(filename)
         # Process the file
-        processed_filename = os.path.splitext(filename)[0] + '.xlsx'        
+        processed_filename = os.path.splitext(filename)[0] + '.pdf'        
         # Return the processed file as a response
         return send_file(processed_filename, as_attachment=True, download_name=f"{processed_filename}")
 
@@ -41,3 +41,4 @@ def upload_file():
 
 if __name__ == '__main__':
     app.run(debug=False)
+    shutil.rmtree(app.config['UPLOAD_FOLDER'])

@@ -1,27 +1,27 @@
-name: mm_align
+name: ocr_corrector
 channels:
   - defaults
   - conda-forge
   - anaconda
 dependencies:
-  - pip==23.0
+  - pip
   - python==3.10
   - numpy
   - cython
   - sentencepiece
+  - fairseq
   - pip:
-    - pillow
-    - poppler-utils
-    - pandas
-    - mcerp 
-    - unicategories
-    - fairseq
-    - scikit-learn
-    - pdf2image
-    - tensorboardX
-    - openpyxl
-    - xlsxwriter
-    - openai
-    - python-dotenv
-    - pdfplumber
-    - unidecode
+    - pillow==11.1.0
+    - pandas==2.2.3
+    - mcerp==0.12
+    - requests==2.32.3
+    - unicategories==0.1.2
+    - scikit-learn==1.6.0
+    - pdf2image==1.17.0
+    - xlsxwriter==3.2.0
+    - pdfplumber==0.11.5
+    - openai==1.61.1
+    - python-dotenv==1.0.1
+    - unidecode==1.3.8
+    - laserembeddings==1.1.2
+    - flask==3.1.0
