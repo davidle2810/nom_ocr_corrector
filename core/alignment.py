@@ -1,5 +1,5 @@
-import bitext_helper as bitext
-import corrector_updating as crt
+import core.bitext_helper as bitext
+import core.corrector_updating as crt
 import argparse
 import shutil
 import os

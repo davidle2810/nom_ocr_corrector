@@ -4,7 +4,7 @@ import base64
 import shutil
 import openai
 import pdfplumber
-import sinonom_pdf_helper as sn
+import core.sinonom_pdf_helper as sn
 
 from dotenv import load_dotenv
 load_dotenv('.env')
