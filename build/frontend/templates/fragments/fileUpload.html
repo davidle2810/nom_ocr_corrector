@@ -1,0 +1,7 @@
+<form id='form' class="bg-red-200 flex flex-col items-center gap-3 w-[80vw]" hx-encoding='multipart/form-data' hx-post='mock/' hx-ext="htmx-download">
+    <input hidden id="inputFile" type='file' name='file' accept=".pdf">
+    <button class="font-semibold bg-green-700 text-white px-[1rem] py-[0.5rem] rounded-[0.5rem] w-full">
+        Upload
+    </button>
+    <progress class="w-full bg-gray-200 rounded-full h-1 dark:bg-gray-700" id='progress' value='0' max='100'></progress>
+</form>
