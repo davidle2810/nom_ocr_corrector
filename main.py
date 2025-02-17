@@ -1,16 +1,16 @@
-from flask import Flask, request, send_file
+from flask import Flask, request, send_file, make_response
+from flask_cors import CORS
 import core.alignment
 import os
 import shutil
 app = Flask(__name__)
+CORS(app)
 
 # Define the upload folder and allowed file types
-UPLOAD_FOLDER = 'data'
+UPLOAD_FOLDER = 'upload'
 ALLOWED_EXTENSIONS = {'pdf'}  # Add more types as needed
 
-# Ensure the upload folder exists
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -22,23 +22,36 @@ def allowed_file(filename):
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
-        return "No file part", 400
+        return  make_response("No file part", 400)
     file = request.files['file']
     
     if file.filename == '':
-        return "No selected file", 400
-    
+        return  make_response("No selected file", 400)
+    # Ensure the upload folder exists
+    if os.path.exists(UPLOAD_FOLDER):
+        shutil.rmtree(UPLOAD_FOLDER)
+    os.makedirs(UPLOAD_FOLDER)
     if file and allowed_file(file.filename):
         filename = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
         file.save(filename)
-        #core.alignment.processing(filename)
+        core.alignment.process(filename)
         # Process the file
-        processed_filename = os.path.splitext(filename)[0] + '.pdf'        
+        processed_filename = 'output.zip'
+        # headers = {
+        #     'Access-Control-Allow-Origin': '*',
+        #     'Access-Control-Allow-Credentials': 'true',
+        #     'Access-Control-Allow-Methods': '*'
+        # }        
         # Return the processed file as a response
-        return send_file(processed_filename, as_attachment=True, download_name=f"{processed_filename}")
 
-    return "Invalid file type", 400
+        # Return the processed file as a response with proper headers
+        return send_file(
+            processed_filename,
+            as_attachment=True,
+            download_name=os.path.basename(processed_filename),  # Just the file name, not the full path
+            )
+    return  make_response("Invalid file type", 400)
 
 if __name__ == '__main__':
     app.run(debug=False)
-    shutil.rmtree(app.config['UPLOAD_FOLDER'])
+

@@ -4,6 +4,9 @@ import base64
 import shutil
 import openai
 import pdfplumber
+import cv2
+import numpy as np
+from PIL import Image
 import core.sinonom_pdf_helper as sn
 
 from dotenv import load_dotenv
@@ -19,12 +22,32 @@ def convert_to_bw(image, threshold=128):
     # Apply thresholding to create a binary (black and white) image
     return image.convert('L').point(lambda p: p > threshold and 255)
 
-def pdf_to_images(pdf_path, output_folder="output_images"):
+def resize_image(image_path, max_size=1200):
+    with Image.open(image_path) as img:
+        width, height = img.size
+        total_size = width + height
+
+        if total_size > max_size:
+            scale_factor = max_size / total_size
+            new_width = int(width * scale_factor)
+            new_height = int(height * scale_factor)
+            img = img.resize((new_width, new_height), Image.LANCZOS)
+            img.save(image_path)
+
+def resize_images_in_directory(directory_path):
+    for filename in os.listdir(directory_path):
+        if filename.lower().endswith(('png', 'jpg', 'jpeg', 'bmp', 'gif')):
+            image_path = os.path.join(directory_path, filename)
+            resize_image(image_path)
+
+
+def pdf_to_images(pdf_path, output_folder="images"):
     if os.path.exists(output_folder):
         shutil.rmtree(output_folder)  # Delete the folder and its contents
     os.makedirs(output_folder)
     image_paths = []
-    page_number = 0
+    page_number = 1
+    base_file_name = os.path.splitext(os.path.basename(pdf_path))[0] 
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
             image = convert_to_bw(page.to_image(resolution=300).original)  # Convert to image with 300 DPI for better OCR accuracy
@@ -33,15 +56,16 @@ def pdf_to_images(pdf_path, output_folder="output_images"):
                 left_half = image.crop((0, 0, width // 2, height))
                 right_half = image.crop((width // 2, 0, width, height))
                 # Save both halves
-                left_half.save(os.path.join(output_folder, f"page_{page_number}.png"), format="PNG")
-                right_half.save(os.path.join(output_folder, f"page_{page_number+1}.png"), format="PNG")
-                image_paths.append(os.path.join(output_folder, f"page_{page_number}.png"))
-                image_paths.append(os.path.join(output_folder, f"page_{page_number+1}.png"))
+                left_half.save(os.path.join(output_folder, f"{base_file_name}_page{page_number:03}.png"), format="PNG")
+                right_half.save(os.path.join(output_folder, f"{base_file_name}_page{page_number+1:03}.png"), format="PNG")
+                image_paths.append(os.path.join(output_folder, f"{base_file_name}_page{page_number:03}.png"))
+                image_paths.append(os.path.join(output_folder, f"{base_file_name}_page{page_number+1:03}.png"))
                 page_number = page_number+2
             else:
-                image.save(os.path.join(output_folder, f"page_{page_number}.png"), format="PNG")
-                image_paths.append(os.path.join(output_folder, f"page_{page_number}.png"))
+                image.save(os.path.join(output_folder, f"{base_file_name}_page{page_number:03}.png"), format="PNG")
+                image_paths.append(os.path.join(output_folder, f"{base_file_name}_page{page_number:03}.png"))
                 page_number = page_number + 1
+    resize_images_in_directory(output_folder)
     return image_paths
 
 # Function to encode the image to base64
@@ -168,7 +192,7 @@ def clean_text(text):
 
 # Function to call GPT-4o API with the base64 image and a question
 def extract_page_content(image_path):
-    prompt = "Read the input image, if the content is Vietnamese, return ONLY the content in the image, else return 'ns_image'"
+    prompt = "Read the input image, if the content has Vietnamese, return ONLY the Vietnamese content in the image, else return 'ns_image'"
     img_type = 'image/png'
     #client = openai.OpenAI(api_key=api_key)
     response = client.chat.completions.create(
@@ -194,10 +218,13 @@ def get_content_from_bitext(file_path):
     vn_page_number = 0
     sn_content = list()
     vn_content = list()
+    base_file_name = os.path.splitext(os.path.basename(file_path))[0] 
     for page_number in range(len(image_paths)):
-        page_content = extract_page_content(os.path.join('output_images', f"page_{page_number}.png"))
+        page_content = extract_page_content(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"))
         if 'ns_image' in page_content.lower():
-            sn_content.append({'page_number': sn_page_number, 'content': sn.extract_pages(os.path.join('output_images', f"page_{page_number}.png"))})
+            shutil.copy(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"), os.path.join(os.environ['OUTPUT_FOLDER'],'images_label', f"{base_file_name}_page{page_number+1:03}.png"))
+            sn_page_content = sn.extract_pages(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"))
+            sn_content.append({'page_number': sn_page_number, 'file_page_number': page_number+1, 'content': sn_page_content})
             sn_page_number = sn_page_number + 1
         else:
             vn_content.append({'page_number': vn_page_number, 'content': clean_text(page_content)})
