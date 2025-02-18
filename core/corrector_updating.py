@@ -8,7 +8,7 @@ load_dotenv('.env')
 qn_to_sn_path = 'resource/QN2Nom_cleaned.json'
 qn_to_sn = json.load(open(qn_to_sn_path))
 qn_to_sn_without_accent = json.load(open('resource/QN2Nom_without_accent.json'))
-sn_sim_path = os.environ['NOM_SIMILARITY']
+sn_sim_path = os.environ['NOM_SIMILARITY_DICTIONARY']
 sn_sim = pd.read_csv(sn_sim_path)
 sn_sim = {
     row['char']: eval(row['sim'])

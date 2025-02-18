@@ -54,8 +54,8 @@ def upload_file():
         file.save(filename)
         process_file(filename)
         # Process the file
-        processed_filename = 'output.zip'
-
+        processed_filename = os.path.splitext(os.path.basename(filename))[0] + '.zip'
+        shutil.rmtree(UPLOAD_FOLDER)
         # Return the processed file as a response with proper headers
         return send_file(
             processed_filename,

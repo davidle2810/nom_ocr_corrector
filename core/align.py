@@ -1,5 +1,5 @@
 import core.extract_bitext as bitext
-import core.corrector_updating as crt
+import core.corrector as crt
 import shutil
 import os
 import pandas as pd
