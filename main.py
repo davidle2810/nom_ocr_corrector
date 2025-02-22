@@ -65,5 +65,5 @@ def upload_file():
     return  make_response("Invalid file type", 400)
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(port=5000,debug=False)
 

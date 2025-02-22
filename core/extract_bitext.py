@@ -2,16 +2,16 @@ import os
 import re
 import base64
 import shutil
-import openai
+from google.cloud import vision
+import io
 import pdfplumber
 from PIL import Image
+import langdetect
 import core.extract_sn_text as sn
 
 from dotenv import load_dotenv
 load_dotenv('.env')
-
-api_key = os.environ['OPENAI_API_KEY']
-client = openai.OpenAI(api_key=api_key)
+api_key = os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
 syllable_file_path = os.environ['SYLLABLE']
 with open(syllable_file_path, encoding='utf-16') as f:
     morpho_syllable = f.read().splitlines() 
@@ -190,24 +190,26 @@ def clean_text(text):
 
 # Function to call GPT-4o API with the base64 image and a question
 def extract_page_content(image_path):
-    prompt = "Read the input image, if the content has Vietnamese, return ONLY the Vietnamese content in the image, else return 'ns_image'"
-    img_type = 'image/png'
-    response = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:{img_type};base64,{encode_image_to_base64(image_path)}"},
-                    },
-                ],
-            }
-        ],
-    )
-    return response.choices[0].message.content.lower()
+    """Sử dụng Google Cloud Vision để OCR văn bản từ hình ảnh"""
+    
+    # Khởi tạo Client
+    client = vision.ImageAnnotatorClient()
+
+    # Đọc file ảnh
+    with io.open(image_path, 'rb') as image_file:
+        content = image_file.read()
+    
+    image = vision.Image(content=content)
+    
+    # Gửi yêu cầu OCR
+    response = client.text_detection(image=image)
+    texts = response.text_annotations
+
+    if texts:
+        return texts[0].description
+    else:
+        return ''
+
 
 def get_content_from_bitext(file_path):
     image_paths = pdf_to_images(pdf_path=file_path)
@@ -218,7 +220,7 @@ def get_content_from_bitext(file_path):
     base_file_name = os.path.splitext(os.path.basename(file_path))[0] 
     for page_number in range(len(image_paths)):
         page_content = extract_page_content(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"))
-        if 'ns_image' in page_content.lower():
+        if langdetect.detect(page_content)!='vi':
             shutil.copy(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"), os.path.join(os.environ['OUTPUT_FOLDER'],'images_label', f"{base_file_name}_page{page_number+1:03}.png"))
             sn_page_content = sn.extract_pages(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"))
             sn_content.append({'page_number': sn_page_number, 'file_page_number': page_number+1, 'content': sn_page_content})

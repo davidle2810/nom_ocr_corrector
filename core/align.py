@@ -34,6 +34,7 @@ def align_paragraphs(sn2vn_content,vn_content):
                 'target_text': target_page['content'],
                 'similarity_score': float(best_score)
             })
+    alignment_results.sort(key=lambda x: x['target_page_number'], reverse = False)
     return alignment_results
 
 def align_bboxes(input_file):
@@ -98,8 +99,8 @@ def align_bboxes(input_file):
                         ocrs.extend((red, nom_list[0]))
                         nom_list.pop(0)
                     elif corrected_list[0].startswith('insert:'):
-                        corrs.extend((red, 'X'))
-                        qns.extend((red, vie_list[0] + ' '))
+                        # corrs.extend((red, 'X'))
+                        # qns.extend((red, vie_list[0] + ' '))
                         vie_list.pop(0)
                     corrected_list.pop(0)
                 worksheet.write(row_id, 0, f'{os.path.splitext(os.path.basename(input_file))[0] }_page{file_page_number:03}.png', font_format)
