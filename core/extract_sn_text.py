@@ -63,10 +63,10 @@ def kandian_ocr_api(
         return {"error": f"HTTP {response.status_code}: {response.text}"}
 
 def upload_image_api(image_path):
-
+    headers = {"User-Agent": "upload_image"}
     url_upload = os.environ['SN_IMAGE_UPLOAD']
     files = {'image_file': open(image_path, 'rb')}
-    response = requests.post(url_upload, files=files, verify=False)
+    response = requests.post(url_upload, files=files)
     data = json.loads(response.text)
     if data['is_success']:
         file_name = data['data']['file_name']
@@ -75,13 +75,14 @@ def upload_image_api(image_path):
     return file_name
 
 def ocr_image_api(image_path_server):
+    headers = {"User-Agent": "ocr"}
     url_ocr = os.environ['SN_OCR']
     data = {
         "ocr_id": 1,
         "file_name": image_path_server
     }
  
-    ocr_response = requests.post(url_ocr, json=data, verify=False)  
+    ocr_response = requests.post(url_ocr, json=data)  
     data = json.loads(ocr_response.text)
     if data['is_success']:
         ocr = data['data']['result_bbox']
@@ -102,7 +103,7 @@ def sn_transliteration_api(text: str) -> str:
     headers = {"User-Agent": "transliteration"}
     url_transliteration = os.environ['SN_TRANSLITERATE']
     data = {"text":text}
-    response = requests.post(url_transliteration, headers=headers, json=data, verify=False)  
+    response = requests.post(url_transliteration, headers=headers, json=data)  
     data = json.loads(response.text)
     if data['is_success']:
         result_text = data['data']['result_text_transcription']
