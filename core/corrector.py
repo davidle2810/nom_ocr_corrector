@@ -51,9 +51,9 @@ def correct(sn: str, qn: list[str]) -> list[str]:
         if i == n and j == m: return 0
         if dp[i][j] is not None: return dp[i][j]
         res = n + m
-        if i < n and j < m and similar[i][j] is not None:
+        if i < n and j < m and similar[i][j] is not None and similar[i][j]==sn[j]:
             res = min(res, memoi(i + 1, j + 1))
-        if i < n and j < m and similar[i][j] is None:
+        if i < n and j < m and similar[i][j] is not None and similar[i][j]!=sn[j]:
             res = min(res, memoi(i + 1, j + 1) + edit_cost['replace'])
         if i < n:
             res = min(res, memoi(i + 1, j) + edit_cost['insert'])
