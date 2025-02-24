@@ -3,7 +3,7 @@ import http.client
 import mimetypes
 from codecs import encode
 import ssl
-import certifi
+import time
 import json
 import os
 
@@ -76,8 +76,13 @@ def extract_pages(image_path: str) -> list:
             - 'transliteration': The transliterated version of the text content.
     """
     page_content = list()
-    text_lines = ocr_image_api(upload_image_api(image_path))
-    transliterate_text = sn_transliteration_api('\n'.join([text_line['text'] for text_line in text_lines]))        
+    try:
+        text_lines = ocr_image_api(upload_image_api(image_path))
+        transliterate_text = sn_transliteration_api('\n'.join([text_line['text'] for text_line in text_lines]))        
+    except:
+        time.sleep(60)
+        text_lines = ocr_image_api(upload_image_api(image_path))
+        transliterate_text = sn_transliteration_api('\n'.join([text_line['text'] for text_line in text_lines]))        
     for line_id, text_line in enumerate(text_lines):
         page_content.append({'bbox': text_line['position'], 'content': text_line['text'], 'transliteration': transliterate_text[line_id]})
     return core.sort_boxes.sort(page_content)
