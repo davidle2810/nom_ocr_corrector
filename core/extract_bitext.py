@@ -220,7 +220,7 @@ def get_content_from_bitext(file_path):
     base_file_name = os.path.splitext(os.path.basename(file_path))[0] 
     for page_number in range(len(image_paths)):
         page_content = extract_page_content(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"))
-        if langdetect.detect(page_content)!='vi':
+        if page_content is None or langdetect.detect(page_content)!='vi':
             shutil.copy(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"), os.path.join(os.environ['OUTPUT_FOLDER'],'images_label', f"{base_file_name}_page{page_number+1:03}.png"))
             sn_page_content = sn.extract_pages(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"))
             sn_content.append({'page_number': sn_page_number, 'file_page_number': page_number+1, 'content': sn_page_content})
