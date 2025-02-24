@@ -18,6 +18,19 @@ conda activate ocr_corrector
 python -m laserembeddings download-models
 ```
 
+## Setup `.env` file
+```
+NOM_SIMILARITY_DICTIONARY = resource/SN_similarities.csv
+QN2NOM_DICTIONARY = resource/QN2Nom_cleaned.json
+QN2NOM_WITHOUT_ACCENT_DICTIONARY = resource/QN2Nom_without_accent.jon
+
+SN_DOMAIN = tools.clc.hcmus.edu.vn
+
+OUTPUT_FOLDER = output
+GOOGLE_APPLICATION_CREDENTIALS = 
+SYLLABLE = resource/syllable.txt
+```
+
 ## Run nom_ocr_corrector
 ### Using provided data
 ```
