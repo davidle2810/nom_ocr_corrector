@@ -124,43 +124,20 @@ def number_to_text(n: str):
         return ' '.join(result).strip()
 
 # Regex to find numbers in the text
-def splitting(text_list):
-   
-    result = []
-    if len(text_list)==0:
-        return ['#']
-    for i in range(1,len(text_list)+1):
-        if len(set([''.join(text_list[:i])]).intersection(set(morpho_syllable)))>0 and len(text_list[:i])!=1:
-            result.append([''.join(text_list[:i]),splitting(text_list[i:])])            
-    return result
-
-
-# Recursive splitting function
-def connect(text, structure):
-    results = []
-    
-    # Helper function to traverse the structure
-    def traverse(node, remaining_text, current_split):
-        if not remaining_text:
-            # If there's no text left and '#' is a valid terminal, add the result
-            if "#" in node:
-                results.append(" ".join(current_split))
-            return
-        
-        # Iterate over each child node
-        for syllable, children in node:
-            # Check if the current text starts with this syllable
-            if remaining_text.startswith(syllable):
-                # Recursively process the remaining text
-                traverse(children, remaining_text[len(syllable):], current_split + [syllable])
-        
-        # If no valid path matches, stop the traversal
-        if "#" in node:
-            results.append(" ".join(current_split))
-    
-    # Start traversal
-    traverse(structure, text, [])
-    return min(results, key=len) if results else None
+def split_words(word):
+    if word == '':
+        return ''
+    list_chars=list(word)
+    words = ''
+    for i in range(len(list_chars)):
+        if ''.join(list_chars[:i+1]) in morpho_syllable:
+            words = ''.join(list_chars[:i+1]) + ' '
+            new_list_chars = list_chars[i+1:]
+            words += split_words(''.join(new_list_chars))
+            if len(word)==len(''.join(words.strip().split())):
+                return words
+    if len(list_chars)> 0 and ''.join(list_chars) not in morpho_syllable:
+        return ''
 
 def clean_text(text):
     """ 
@@ -181,7 +158,7 @@ def clean_text(text):
         if (word in morpho_syllable) or (word.isdigit()) or len(word)==1:
             new_line += word + ' '
         else:
-            candidate = connect(word,splitting(list(word)))
+            candidate = split_words(word)
             if candidate:
                 new_line+= candidate + ' '
             else:
@@ -222,6 +199,7 @@ def get_content_from_bitext(file_path):
         page_content = extract_page_content(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"))
         try:
             if langdetect.detect(page_content)!='vi':
+                resize_image(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"))
                 shutil.copy(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"), os.path.join(os.environ['OUTPUT_FOLDER'],'images_label', f"{base_file_name}_page{page_number+1:03}.png"))
                 sn_page_content = sn.extract_pages(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"))
                 sn_content.append({'page_number': sn_page_number, 'file_page_number': page_number+1, 'content': sn_page_content})
