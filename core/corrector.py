@@ -1,12 +1,15 @@
 import json
 import os
 import pandas as pd
+import core.tools
 from unidecode import unidecode
 from dotenv import load_dotenv
 load_dotenv('.env')
 
 qn_to_sn_path = os.environ['QN2NOM_DICTIONARY']
 qn_to_sn = json.load(open(qn_to_sn_path))
+core.tools.normalize_json(qn_to_sn_path)
+qn_to_sn_without_accent = json.load(open('resource/QN2Nom_without_accent.json'))
 sn_sim_path = os.environ['NOM_SIMILARITY_DICTIONARY']
 sn_sim = pd.read_csv(sn_sim_path)
 sn_sim = {
@@ -14,6 +17,12 @@ sn_sim = {
     for _, row in sn_sim.iterrows()
 }
 
+def is_correct(s, q)-> bool:
+    if q in qn_to_sn and s in qn_to_sn[q]:
+        return True
+    if unidecode(q) in qn_to_sn_without_accent and s in qn_to_sn_without_accent[unidecode(q)]:
+        return True
+    return False
 def correct(sn: str, qn: list[str]) -> list[str]:
     """
     Correct a Sino sentence to a Quoc Ngu sentence.
@@ -51,9 +60,11 @@ def correct(sn: str, qn: list[str]) -> list[str]:
         if i == n and j == m: return 0
         if dp[i][j] is not None: return dp[i][j]
         res = n + m
-        if i < n and j < m and similar[i][j] is not None and similar[i][j]==sn[j]:
+        if i < n and j < m and is_correct(sn[j],qn[i]):
             res = min(res, memoi(i + 1, j + 1))
         if i < n and j < m and similar[i][j] is not None and similar[i][j]!=sn[j]:
+            res = min(res, memoi(i + 1, j + 1) + edit_cost['replace'])
+        if i < n and j < m and similar[i][j] is None:
             res = min(res, memoi(i + 1, j + 1) + edit_cost['replace'])
         if i < n:
             res = min(res, memoi(i + 1, j) + edit_cost['insert'])
@@ -65,37 +76,20 @@ def correct(sn: str, qn: list[str]) -> list[str]:
     def traceback(i, j):
         if i == n and j == m: return
         res = memoi(i, j)
-        if i < n and j < m and similar[i][j] is not None and res == memoi(i + 1, j + 1):
-            corrections.append(f'correct:{similar[i][j]}')
+        if i < n and j < m and is_correct(sn[j],qn[i]) and res == memoi(i + 1, j + 1):
+            corrections.append(f'correct:{sn[j]}')
+            traceback(i + 1, j + 1)
+        elif i < n and j < m and similar[i][j] is not None and similar[i][j]!=sn[j] and res == memoi(i + 1, j + 1) + edit_cost['replace']:
+            corrections.append(f'replace:{sn[j]}->{similar[i][j]}')
             traceback(i + 1, j + 1)
         elif i < n and j < m and similar[i][j] is None and res == memoi(i + 1, j + 1) + edit_cost['replace']:
-            corrections.append(f'replace:{sn[j]}->{qn_to_sn.get(qn[i], ["X"])[0]}')
+            corrections.append(f'replace:{sn[j]}->X')
             traceback(i + 1, j + 1)
         elif i < n and res == memoi(i + 1, j) + edit_cost['insert']:
-            corrections.append(f'insert:{qn_to_sn.get(qn[i], ["X"])[0]}')
+            corrections.append(f"insert:I")
             traceback(i + 1, j)
         elif j < m and res == memoi(i, j + 1) + edit_cost['delete']:
             corrections.append(f'delete:{sn[j]}')
             traceback(i, j + 1)
     traceback(0, 0)
     return corrections
-
-def normalize_correction(correction: list) -> str:
-    """
-    Normalize the correction string.
-    Input:
-    - correction: list, a list of correction
-    Output:
-    - str, a normalized correction string
-    """
-    assert isinstance(correction, list), 'correction must be a list'
-    def transform(s):
-        if s.startswith('correct:'):
-            return s.split(':')[1]
-        if s.startswith('replace:'):
-            return s.split(':')[1][0]
-        if s.startswith('insert:'):
-            return s.split(':')[1]
-        if s.startswith('delete:'):
-            return ''
-    return ''.join(transform(s) for s in correction)

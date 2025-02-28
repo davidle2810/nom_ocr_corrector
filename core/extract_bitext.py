@@ -144,6 +144,8 @@ def clean_text(text):
     Removing non-latin chars
     But keeping numbers and punctuations as default
     """
+    text = re.sub(r'-\s*\d+\s*-', '', text)  # Remove "- digits -"
+    text = re.sub(r'\(\s*\d+\s*\)', '', text)  # Remove "( digits )"
     text = re.sub(r'[^a-zA-Z0-9\u00C0-\u1EF9\s\n]+', ' ', text)
      # Replace multiple consecutive spaces with a single space
     text = re.sub(r'\s+', ' ', text).strip()
@@ -153,6 +155,7 @@ def clean_text(text):
     
     # Replace all numbers in the text with their Vietnamese words
     text = re.sub(r'\d+', replace_number, text.lower())
+    text = re.sub(r'\s+', ' ', text).strip()
     new_line = ''
     for word in text.split():
         if (word in morpho_syllable) or (word.isdigit()) or len(word)==1:
@@ -163,7 +166,7 @@ def clean_text(text):
                 new_line+= candidate + ' '
             else:
                 new_line += word + ' '
-    return new_line
+    return re.sub(r'\s+', ' ', new_line).strip()
 
 # Function to call GPT-4o API with the base64 image and a question
 def extract_page_content(image_path):

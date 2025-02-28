@@ -97,9 +97,10 @@ def align_bboxes(input_file):
                         vie_list.pop(0)
                     elif corrected_list[0].startswith('delete:'):
                         ocrs.extend((red, nom_list[0]))
+                        # corrs.extend((red, nom_list[0]))
                         nom_list.pop(0)
                     elif corrected_list[0].startswith('insert:'):
-                        # corrs.extend((red, 'X'))
+                        corrs.extend((red, 'I'))
                         # qns.extend((red, vie_list[0] + ' '))
                         vie_list.pop(0)
                     corrected_list.pop(0)
