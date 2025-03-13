@@ -22,7 +22,6 @@ python -m laserembeddings download-models
 ```
 NOM_SIMILARITY_DICTIONARY = resource/SN_similarities.csv
 QN2NOM_DICTIONARY = resource/QN2Nom_cleaned.json
-QN2NOM_WITHOUT_ACCENT_DICTIONARY = resource/QN2Nom_without_accent.jon
 
 SN_DOMAIN = tools.clc.hcmus.edu.vn
 
