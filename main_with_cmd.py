@@ -1,5 +1,4 @@
-from flask import Flask, request, send_file, make_response
-from flask_cors import CORS
+
 import core.align
 import core.crop_images
 import core.convert_to_paddle as cvt
@@ -25,16 +24,22 @@ def process_file(file_name):
     core.crop_images.crop_image(output_file_path)
     shutil.make_archive(os.path.splitext(os.path.basename(file_name))[0], 'zip', os.environ['OUTPUT_FOLDER'])
     shutil.rmtree(os.environ['OUTPUT_FOLDER'])
-
+    
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Sentence alignment using sentence embeddings',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('--input', type=str, required=True,
                         help='path_to_input_document')
+    parser.add_argument('--file_id', type=str, required=False,
+                        help='file_id')
     args = parser.parse_args()
     # read the content of 2 pdf files: nom and viet
     input_file = args.input
+    file_id = args.file_id if args.file_id else None
+    if file_id:
+        os.rename(input_file,os.path.join( os.path.dirname(input_file),  file_id+os.path.splitext(input_file)[1]))
+        input_file = os.path.join( os.path.dirname(input_file),  file_id+os.path.splitext(input_file)[1])
     process_file(input_file)
     print('Results are saved to ',os.path.splitext(os.path.basename(input_file))[0]+'.zip')
 

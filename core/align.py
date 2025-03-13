@@ -2,7 +2,6 @@ import core.extract_bitext as bitext
 import core.corrector as crt
 import shutil
 import os
-import pandas as pd
 import numpy as np
 from laserembeddings import Laser
 from sklearn.metrics.pairwise import cosine_similarity
@@ -11,6 +10,16 @@ laser = Laser()
 
 from dotenv import load_dotenv
 load_dotenv('.env')
+
+class Stat:
+    def __init__(self):
+        self.number_of_sentence = 0
+        self.number_of_sn = 0
+        self.number_of_qn = 0
+        self.number_of_wrong_sn = 0
+        self.number_of_replace_sn = 0
+        self.number_of_delete = 0
+        self.number_of_insert = 0
 
 def align_paragraphs(sn2vn_content,vn_content):
     source_embeddings = laser.embed_sentences([page['content'] for page in sn2vn_content], lang='vi')  # or "en" if your source is in English, etc.
@@ -48,6 +57,7 @@ def align_bboxes(input_file):
     shutil.rmtree('images')
     # align sentences
     output_file = os.path.splitext(os.path.basename(input_file))[0]  + '.xlsx'
+    stat = Stat()
     with Workbook(os.path.join(os.environ['OUTPUT_FOLDER'],output_file)) as workbook:
         worksheet   = workbook.add_worksheet(f"Result")
         font_format = workbook.add_format({'font_name': 'Nom Na Tong'})
@@ -72,6 +82,7 @@ def align_bboxes(input_file):
             corrected_list=crt.correct(nom_lines,tgt_lines)
             vie_list = tgt_lines.copy()
             for chunk in src_lines:
+                stat.number_of_sentence += 1
                 bbox = chunk[0]
                 nom_list = list(chunk[1])
                 ocrs = []
@@ -84,28 +95,38 @@ def align_bboxes(input_file):
                         qns.extend((black, vie_list[0] + ' '))
                         nom_list.pop(0)
                         vie_list.pop(0)
+                        stat.number_of_sn += 1
+                        stat.number_of_qn += 1
                     elif corrected_list[0].startswith('replace:'):
+                        stat.number_of_wrong_sn += 1
                         if corrected_list[0].split(':')[1][-1]!="X":
                             ocrs.extend((blue, nom_list[0]))
                             corrs.extend((blue, corrected_list[0].split(':')[1][-1]))
                             qns.extend((blue, vie_list[0] + ' '))
+                            stat.number_of_replace_sn +=1
                         else:
                             ocrs.extend((red, nom_list[0]))
-                            corrs.extend((red, corrected_list[0].split(':')[1][-1]))
+                            corrs.extend((red, corrected_list[0].split(':')[1][0]))
                             qns.extend((red, vie_list[0] + ' '))
                         nom_list.pop(0)
                         vie_list.pop(0)
+                        stat.number_of_sn += 1
+                        stat.number_of_qn += 1
                     elif corrected_list[0].startswith('delete:'):
                         ocrs.extend((red, nom_list[0]))
                         # corrs.extend((red, nom_list[0]))
                         nom_list.pop(0)
+                        stat.number_of_sn += 1
+                        stat.number_of_delete += 1
                     elif corrected_list[0].startswith('insert:'):
                         corrs.extend((red, 'I'))
-                        # qns.extend((red, vie_list[0] + ' '))
+                        qns.extend((red, vie_list[0] + ' '))
                         vie_list.pop(0)
+                        stat.number_of_qn += 1
+                        stat.number_of_insert += 1
                     corrected_list.pop(0)
-                worksheet.write(row_id, 0, f'{os.path.splitext(os.path.basename(input_file))[0] }_page{file_page_number:03}.png', font_format)
-                worksheet.write(row_id, 1, f'{os.path.splitext(os.path.basename(input_file))[0] }.{file_page_number:03}.{bbox_id:03}', font_format)
+                worksheet.write(row_id, 0, f'{os.path.splitext(os.path.basename(input_file))[0] }_{file_page_number:03}.png', font_format)
+                worksheet.write(row_id, 1, f'{os.path.splitext(os.path.basename(input_file))[0] }_{file_page_number:03}_{bbox_id:02}.png', font_format)
                 worksheet.write(row_id, 2, str(bbox), font_format)
                 ocrs.extend((' ',' '))
                 worksheet.write_rich_string(row_id, 3, *ocrs)
@@ -117,5 +138,14 @@ def align_bboxes(input_file):
                     worksheet.write_rich_string(row_id, 5, *qns)
                 bbox_id = bbox_id + 1
                 row_id =  row_id + 1 
+    with open(os.path.join(os.environ['OUTPUT_FOLDER'],'stat.txt'), 'w', encoding='utf-8') as f:
+        f.write(f"Number of sentence: {stat.number_of_sentence}\n")
+        f.write(f"Number of Sino-Nôm character: {stat.number_of_sn}\n")
+        f.write(f"Number of QN word: {stat.number_of_qn}\n")
+        f.write(f"Number of wrong SN character: {stat.number_of_wrong_sn}\n")
+        f.write(f"Number of replaced SN character: {stat.number_of_replace_sn}\n")
+        f.write(f"Number of insert character: {stat.number_of_insert}, rate: {(stat.number_of_insert*1.0)/stat.number_of_sn}%\n")
+        f.write(f"Number of delete character: {stat.number_of_delete}, rate: {(stat.number_of_insert*1.0)/stat.number_of_sn}%\n")
+
     return os.path.join(os.environ['OUTPUT_FOLDER'],output_file) 
     

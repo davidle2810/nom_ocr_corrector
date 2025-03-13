@@ -53,7 +53,7 @@ def crop_image(file_name):
             img = cv2.imread(os.path.join(os.environ['OUTPUT_FOLDER'],'images_label',row['image_name']))         
             # Get the rotated cropped image
             img_crop = get_rotate_crop_image(img, np.array(ast.literal_eval(row['bbox']), np.float32))
-            img_name = os.path.splitext(os.path.basename(row['image_name']))[0] + '_crop_'+row['id'][-3:]+'.jpg'
+            img_name = os.path.splitext(os.path.basename(row['image_name']))[0] + '_'+row['id'][-6:]
             if img_crop is None or img_crop.size == 0:
                 continue
             else:

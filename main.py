@@ -42,6 +42,7 @@ def upload_file():
     if 'file' not in request.files:
         return  make_response("No file part", 400)
     file = request.files['file']
+    file_id = request.form.get('file_id', '').strip()
     
     if file.filename == '':
         return  make_response("No selected file", 400)
@@ -52,6 +53,9 @@ def upload_file():
     if file and allowed_file(file.filename):
         filename = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
         file.save(filename)
+        if file_id:
+            os.rename(filename, os.path.join( os.path.dirname(filename),file_id+os.path.splitext(filename)[1]))
+            filename = os.path.dirname(filename),file_id+os.path.splitext(filename)[1])
         process_file(filename)
         # Process the file
         processed_filename = os.path.splitext(os.path.basename(filename))[0] + '.zip'

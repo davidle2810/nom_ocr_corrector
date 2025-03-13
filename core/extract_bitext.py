@@ -54,14 +54,14 @@ def pdf_to_images(pdf_path, output_folder="images"):
                 left_half = image.crop((0, 0, width // 2, height))
                 right_half = image.crop((width // 2, 0, width, height))
                 # Save both halves
-                left_half.save(os.path.join(output_folder, f"{base_file_name}_page{page_number:03}.png"), format="PNG")
-                right_half.save(os.path.join(output_folder, f"{base_file_name}_page{page_number+1:03}.png"), format="PNG")
-                image_paths.append(os.path.join(output_folder, f"{base_file_name}_page{page_number:03}.png"))
-                image_paths.append(os.path.join(output_folder, f"{base_file_name}_page{page_number+1:03}.png"))
+                left_half.save(os.path.join(output_folder, f"{base_file_name}_{page_number:03}.png"), format="PNG")
+                right_half.save(os.path.join(output_folder, f"{base_file_name}_{page_number+1:03}.png"), format="PNG")
+                image_paths.append(os.path.join(output_folder, f"{base_file_name}_{page_number:03}.png"))
+                image_paths.append(os.path.join(output_folder, f"{base_file_name}_{page_number+1:03}.png"))
                 page_number = page_number+2
             else:
-                image.save(os.path.join(output_folder, f"{base_file_name}_page{page_number:03}.png"), format="PNG")
-                image_paths.append(os.path.join(output_folder, f"{base_file_name}_page{page_number:03}.png"))
+                image.save(os.path.join(output_folder, f"{base_file_name}_{page_number:03}.png"), format="PNG")
+                image_paths.append(os.path.join(output_folder, f"{base_file_name}_{page_number:03}.png"))
                 page_number = page_number + 1
     resize_images_in_directory(output_folder)
     return image_paths
@@ -199,20 +199,20 @@ def get_content_from_bitext(file_path):
     vn_content = list()
     base_file_name = os.path.splitext(os.path.basename(file_path))[0] 
     for page_number in range(len(image_paths)):
-        page_content = extract_page_content(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"))
+        page_content = extract_page_content(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
         try:
             if langdetect.detect(page_content)!='vi':
-                resize_image(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"))
-                shutil.copy(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"), os.path.join(os.environ['OUTPUT_FOLDER'],'images_label', f"{base_file_name}_page{page_number+1:03}.png"))
-                sn_page_content = sn.extract_pages(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"))
+                resize_image(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
+                shutil.copy(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"), os.path.join(os.environ['OUTPUT_FOLDER'],'images_label', f"{base_file_name}_{page_number+1:03}.png"))
+                sn_page_content = sn.extract_pages(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
                 sn_content.append({'page_number': sn_page_number, 'file_page_number': page_number+1, 'content': sn_page_content})
                 sn_page_number = sn_page_number + 1
             else:
                 vn_content.append({'page_number': vn_page_number, 'content': clean_text(page_content)})
                 vn_page_number = vn_page_number + 1
         except:
-            shutil.copy(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"), os.path.join(os.environ['OUTPUT_FOLDER'],'images_label', f"{base_file_name}_page{page_number+1:03}.png"))
-            sn_page_content = sn.extract_pages(os.path.join('images', f"{base_file_name}_page{page_number+1:03}.png"))
+            shutil.copy(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"), os.path.join(os.environ['OUTPUT_FOLDER'],'images_label', f"{base_file_name}_{page_number+1:03}.png"))
+            sn_page_content = sn.extract_pages(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
             sn_content.append({'page_number': sn_page_number, 'file_page_number': page_number+1, 'content': sn_page_content})
             sn_page_number = sn_page_number + 1
             
