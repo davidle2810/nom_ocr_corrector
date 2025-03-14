@@ -50,6 +50,6 @@ python main.py
 #### With command line
 In your terminal, type
 ```
-python main_with_cmd.py --input path/to/your/data.pdf
+python main_with_cmd.py --input path/to/your/data.pdf --file_id file_id
 ```
 
