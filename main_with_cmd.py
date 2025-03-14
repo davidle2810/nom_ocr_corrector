@@ -19,24 +19,10 @@ def process_file(file_name):
     os.makedirs(os.path.join(os.environ['OUTPUT_FOLDER'],'images_label'))
     os.makedirs(os.path.join(os.environ['OUTPUT_FOLDER'],'images_label','crop_img'))
     output_file_path = core.align.align_bboxes(file_name)
-    df = pd.read_excel(output_file_path)[['image_name','id', 'bbox', 'correction']]
+    df = pd.read_excel(output_file_path)[['Img_Box_ID', 'Img_Box_Coordinate', 'SinoNom_Char']]
     image_names = cvt.convert_data_to_Labeltxt(df,os.path.join(os.environ['OUTPUT_FOLDER'],'images_label'))
     cvt.convert_data_to_fileStatetxt(os.path.join(os.environ['OUTPUT_FOLDER'],'images_label'),image_names)
     core.crop_images.crop_image(output_file_path)
-
-    wb = load_workbook(output_file_path)
-    ws = wb.active  # Get the first sheet
-    ws.delete_cols(1)  # Column index starts from 1 (NOT 0)
-    # New header row
-    new_headers = [
-        "Img_Box_ID", "Img_Box_Coordinate", "SinoNom_OCR", 
-        "SinoNom_Char", "ChuQN_txt", "Viet_txt", "Poet_txt"
-    ]
-    for col_idx, header in enumerate(new_headers, start=1):  # Excel columns start from 1
-        ws.cell(row=1, column=col_idx, value=header)
-    wb.save(output_file_path)
-    wb.close()
-    
     shutil.make_archive(os.path.splitext(os.path.basename(file_name))[0], 'zip', os.environ['OUTPUT_FOLDER'])
     shutil.rmtree(os.environ['OUTPUT_FOLDER'])
     

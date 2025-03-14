@@ -64,12 +64,14 @@ def align_bboxes(input_file):
         red         = workbook.add_format({'color': 'red', 'font_name': 'Nom Na Tong'})
         blue        = workbook.add_format({'color': 'blue', 'font_name': 'Nom Na Tong'})
         black       = workbook.add_format({'color': 'black', 'font_name': 'Nom Na Tong'})
-        worksheet.write(0, 0, 'image_name', font_format)
-        worksheet.write(0, 1, 'id', font_format)
-        worksheet.write(0, 2, 'bbox', font_format)
-        worksheet.write(0, 3, 'ocr', font_format)
-        worksheet.write(0, 4, 'correction', font_format)
-        worksheet.write(0, 5, 'nom', font_format)
+        worksheet.write(0, 0, 'Img_Box_ID', font_format)
+        worksheet.write(0, 1, 'Img_Box_Coordinate', font_format)
+        worksheet.write(0, 2, 'SinoNom_OCR', font_format)
+        worksheet.write(0, 3, 'SinoNom_Char', font_format)
+        worksheet.write(0, 4, 'ChuQN_txt', font_format)
+        worksheet.write(0, 5, 'Viet_txt', font_format)
+        worksheet.write(0, 6, 'Poet_txt', font_format)
+
         row_id = 1
         for alignment in paragraph_alignments:
             file_page_number = alignment['file_page_number']
@@ -125,17 +127,17 @@ def align_bboxes(input_file):
                         stat.number_of_qn += 1
                         stat.number_of_insert += 1
                     corrected_list.pop(0)
-                worksheet.write(row_id, 0, f'{os.path.splitext(os.path.basename(input_file))[0] }_{file_page_number:03}.png', font_format)
-                worksheet.write(row_id, 1, f'{os.path.splitext(os.path.basename(input_file))[0] }_{file_page_number:03}_{bbox_id:02}.png', font_format)
-                worksheet.write(row_id, 2, str(bbox), font_format)
+                #worksheet.write(row_id, 0, f'{os.path.splitext(os.path.basename(input_file))[0] }_{file_page_number:03}.png', font_format)
+                worksheet.write(row_id, 0, f'{os.path.splitext(os.path.basename(input_file))[0] }_{file_page_number:03}_{bbox_id:02}.png', font_format)
+                worksheet.write(row_id, 1, str(bbox), font_format)
                 ocrs.extend((' ',' '))
-                worksheet.write_rich_string(row_id, 3, *ocrs)
+                worksheet.write_rich_string(row_id, 2, *ocrs)
                 if len(corrs)>0:
                     corrs.extend((' ',' '))
-                    worksheet.write_rich_string(row_id, 4, *corrs)
+                    worksheet.write_rich_string(row_id, 3, *corrs)
                 if len(qns)>0:
                     qns.extend((' ',' '))
-                    worksheet.write_rich_string(row_id, 5, *qns)
+                    worksheet.write_rich_string(row_id, 4, *qns)
                 bbox_id = bbox_id + 1
                 row_id =  row_id + 1 
     with open(os.path.join(os.environ['OUTPUT_FOLDER'],'stat.txt'), 'w', encoding='utf-8') as f:
