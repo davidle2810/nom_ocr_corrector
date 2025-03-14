@@ -54,8 +54,8 @@ def upload_file():
         filename = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
         file.save(filename)
         if file_id:
-            os.rename(filename, os.path.join( os.path.dirname(filename),file_id+os.path.splitext(filename)[1]))
-            filename = os.path.dirname(filename),file_id+os.path.splitext(filename)[1])
+            os.rename(filename, os.path.join(os.path.dirname(filename),file_id+os.path.splitext(filename)[1]))
+            filename = os.path.join(os.path.dirname(filename),file_id+os.path.splitext(filename)[1])
         process_file(filename)
         # Process the file
         processed_filename = os.path.splitext(os.path.basename(filename))[0] + '.zip'
