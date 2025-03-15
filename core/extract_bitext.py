@@ -209,7 +209,7 @@ def get_content_from_bitext(file_path):
                 page_content = file.read()
             try:
                 sn_page_content = ast.literal_eval(page_content)
-                if isinstance(sn_page_content, dict):
+                if isinstance(sn_page_content, list):
                     resize_image(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
                     shutil.copy(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"), os.path.join(os.environ['OUTPUT_FOLDER'],'images_label', f"{base_file_name}_{page_number+1:03}.png"))
                     sn_content.append({'page_number': sn_page_number, 'file_page_number': page_number+1, 'content': sn_page_content})
@@ -230,19 +230,18 @@ def get_content_from_bitext(file_path):
                     sn_content.append({'page_number': sn_page_number, 'file_page_number': page_number+1, 'content': sn_page_content})
                     sn_page_number = sn_page_number + 1
                     with open(txt_file, 'w', encoding='utf-8') as file:
-                        file.write(sn_page_content + "\n")
+                        file.write(str(sn_page_content))
                 else:
                     vn_page_content = clean_text(page_content)
                     vn_content.append({'page_number': vn_page_number, 'content': vn_page_content})
                     vn_page_number = vn_page_number + 1
                     with open(txt_file, 'w', encoding='utf-8') as file:
-                        file.write(vn_page_content + "\n")
+                        file.write(vn_page_content)
             except:
                 shutil.copy(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"), os.path.join(os.environ['OUTPUT_FOLDER'],'images_label', f"{base_file_name}_{page_number+1:03}.png"))
                 sn_page_content = sn.extract_pages(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
                 sn_content.append({'page_number': sn_page_number, 'file_page_number': page_number+1, 'content': sn_page_content})
                 sn_page_number = sn_page_number + 1
                 with open(txt_file, 'w', encoding='utf-8') as file:
-                        file.write(sn_page_content + "\n")
-    shutil.rmtree('content')   
+                        file.write(str(sn_page_content)) 
     return sn_content, vn_content
