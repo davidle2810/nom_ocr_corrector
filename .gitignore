@@ -176,4 +176,5 @@ cython_debug/
 *.pdf
 *.zip
 data/
+content/
 resource/thesis-453209-6a47dcc06f05.json

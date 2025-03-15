@@ -25,6 +25,7 @@ def process_file(file_name):
     core.crop_images.crop_image(output_file_path)
     shutil.make_archive(os.path.splitext(os.path.basename(file_name))[0], 'zip', os.environ['OUTPUT_FOLDER'])
     shutil.rmtree(os.environ['OUTPUT_FOLDER'])
+    shutil.rmtree('content') 
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Sentence alignment using sentence embeddings',
