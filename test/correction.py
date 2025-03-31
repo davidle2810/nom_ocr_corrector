@@ -113,10 +113,10 @@ def correct(sn: str, qn: list[str]) -> list[str]:
 if __name__ == '__main__':
     # Load the Excel file
        
-    df = pd.read_excel('test/result.xlsx').fillna('')
+    df = pd.read_excel('test/RCM_002_000.xlsx').fillna('')
     stat=Stat()
     # Create workbook
-    with Workbook('test/corrected_result.xlsx') as workbook:
+    with Workbook('test/RCM_002_000.xlsx') as workbook:
         worksheet   = workbook.add_worksheet("Result")
         font_format = workbook.add_format({'font_name': 'Nom Na Tong'})
         red         = workbook.add_format({'color': 'red', 'font_name': 'Nom Na Tong'})
@@ -126,16 +126,20 @@ if __name__ == '__main__':
         black       = workbook.add_format({'color': 'black', 'font_name': 'Nom Na Tong'})
         print(df.head())
         # Write headers
-        headers = ['image_name', 'id', 'bbox', 'ocr', 'correction',	'nom']
-        for col, header in enumerate(headers):
-            worksheet.write(0, col, header, font_format)
+        worksheet.write(0, 0, 'Img_Box_ID', font_format)
+        worksheet.write(0, 1, 'Img_Box_Coordinate', font_format)
+        worksheet.write(0, 2, 'SinoNom_OCR', font_format)
+        worksheet.write(0, 3, 'SinoNom_Char', font_format)
+        worksheet.write(0, 4, 'ChuQN_txt', font_format)
+        worksheet.write(0, 5, 'Viet_txt', font_format)
+        worksheet.write(0, 6, 'Poet_txt', font_format)
         # Write data with formatting
         for index, row in df.iterrows():
             ocrs = []
             corrs = []
             qns = []
-            nom_list = list(re.sub(r'\s+','',row['ocr']))
-            vie_list = re.sub(r'\s+',' ',row['nom']).strip().split()
+            nom_list = list(re.sub(r'\s+','',row['SinoNom_OCR']))
+            vie_list = re.sub(r'\s+',' ',row['ChuQN_txt']).strip().split()
             corrected_list = correct(''.join(nom_list), vie_list)
             stat.number_of_sentence += 1
             # Apply regex patterns
@@ -178,19 +182,18 @@ if __name__ == '__main__':
                     corrected_list.pop(0)
 
             # Write row data
-            worksheet.write(index + 1, 0, row["image_name"], font_format)
-            worksheet.write(index + 1, 1, row["id"], font_format)
-            worksheet.write(index + 1, 2, row["bbox"], font_format)
+            worksheet.write(index + 1, 0, row["Img_Box_ID"], font_format)
+            worksheet.write(index + 1, 1, row["Img_Box_Coordinate"], font_format)
             ocrs.extend((' ',' '))
-            worksheet.write_rich_string(index + 1, 3, *ocrs)
+            worksheet.write_rich_string(index + 1, 2, *ocrs)
             if len(corrs)>0:
                 corrs.extend((' ',' '))
-                worksheet.write_rich_string(index + 1, 4, *corrs)
+                worksheet.write_rich_string(index + 1, 3, *corrs)
             if len(qns)>0:
                 qns.extend((' ',' '))
-                worksheet.write_rich_string(index + 1, 5, *qns)
+                worksheet.write_rich_string(index + 1, 4, *qns)
 
-    with open('stat.txt', 'w', encoding='utf-8') as f:
+    with open('test/stat.txt', 'w', encoding='utf-8') as f:
         f.write(f"Number of sentence: {stat.number_of_sentence}\n")
         f.write(f"Number of Sino-Nôm character: {stat.number_of_sn}\n")
         f.write(f"Number of QN word: {stat.number_of_qn}\n")
