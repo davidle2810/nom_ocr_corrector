@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv('.env')
 context = ssl._create_unverified_context()
 conn = http.client.HTTPSConnection(os.environ['SN_DOMAIN'], context=context)
-
+print(os.environ['SN_DOMAIN'])
 def upload_image_api(image_path):
     dataList = []
     boundary = 'wL36Yn8afVp8Ag7AmP8qZ0SA4n1v9T'

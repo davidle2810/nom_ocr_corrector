@@ -113,10 +113,10 @@ def correct(sn: str, qn: list[str]) -> list[str]:
 if __name__ == '__main__':
     # Load the Excel file
        
-    df = pd.read_excel('test/RCM_002_000.xlsx').fillna('')
+    df = pd.read_excel('test/result_v2.xlsx').fillna('')
     stat=Stat()
     # Create workbook
-    with Workbook('test/RCM_002_000.xlsx') as workbook:
+    with Workbook('test/result_v2.xlsx') as workbook:
         worksheet   = workbook.add_worksheet("Result")
         font_format = workbook.add_format({'font_name': 'Nom Na Tong'})
         red         = workbook.add_format({'color': 'red', 'font_name': 'Nom Na Tong'})
