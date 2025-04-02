@@ -238,6 +238,15 @@ def get_content_from_bitext(file_path):
                     with open(txt_file, 'w', encoding='utf-8') as file:
                         file.write(vn_page_content)
             else:
-                with open(txt_file, 'w', encoding='utf-8') as file:
-                        file.write(page_content) 
+                try:
+                    resize_image(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
+                    shutil.copy(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"), os.path.join(os.environ['OUTPUT_FOLDER'],'images_label', f"{base_file_name}_{page_number+1:03}.png"))
+                    sn_page_content = sn.extract_pages(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
+                    sn_content.append({'page_number': sn_page_number, 'file_page_number': page_number+1, 'content': sn_page_content})
+                    sn_page_number = sn_page_number + 1
+                    with open(txt_file, 'w', encoding='utf-8') as file:
+                        file.write(str(sn_page_content))
+                except:
+                    with open(txt_file, 'w', encoding='utf-8') as file:
+                            file.write(page_content) 
     return sn_content, vn_content
