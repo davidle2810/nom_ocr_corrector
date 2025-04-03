@@ -222,7 +222,7 @@ def get_content_from_bitext(file_path):
                 vn_page_number = vn_page_number + 1
         else:
             page_content = extract_page_content(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
-            if page_content:
+            try:
                 if langdetect.detect(page_content)!='vi':
                     resize_image(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
                     shutil.copy(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"), os.path.join(os.environ['OUTPUT_FOLDER'],'images_label', f"{base_file_name}_{page_number+1:03}.png"))
@@ -237,7 +237,7 @@ def get_content_from_bitext(file_path):
                     vn_page_number = vn_page_number + 1
                     with open(txt_file, 'w', encoding='utf-8') as file:
                         file.write(vn_page_content)
-            else:
+            except:
                 try:
                     resize_image(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
                     shutil.copy(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"), os.path.join(os.environ['OUTPUT_FOLDER'],'images_label', f"{base_file_name}_{page_number+1:03}.png"))
