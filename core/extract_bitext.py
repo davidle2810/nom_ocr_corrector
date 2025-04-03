@@ -9,7 +9,8 @@ import pdfplumber
 from PIL import Image
 import langdetect
 import core.extract_sn_text as sn
-
+import cv2
+import numpy as np
 from dotenv import load_dotenv
 load_dotenv('.env')
 api_key = os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
@@ -64,7 +65,6 @@ def pdf_to_images(pdf_path, output_folder="images"):
                 image.save(os.path.join(output_folder, f"{base_file_name}_{page_number:03}.png"), format="PNG")
                 image_paths.append(os.path.join(output_folder, f"{base_file_name}_{page_number:03}.png"))
                 page_number = page_number + 1
-    resize_images_in_directory(output_folder)
     return image_paths
 
 # Function to encode the image to base64
@@ -181,7 +181,6 @@ def extract_page_content(image_path):
         content = image_file.read()
     
     image = vision.Image(content=content)
-    
     # Gửi yêu cầu OCR
     response = client.text_detection(image=image)
     texts = response.text_annotations
@@ -191,6 +190,54 @@ def extract_page_content(image_path):
     else:
         return ''
 
+def remove_white_space_area(image_path, kernel_size=50, offset=True, offsetMeasure=10):
+    # Load the image
+    image = cv2.imread(image_path)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.medianBlur(gray, 5)
+    _, binary_mask = cv2.threshold(blurred, 240, 255, cv2.THRESH_BINARY_INV)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
+    expanded_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_CLOSE, kernel)
+    # Find contours in the binary mask
+    contours, _ = cv2.findContours(expanded_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return    
+    largest_contour = max(contours, key=cv2.contourArea)
+    x, y, w, h = cv2.boundingRect(largest_contour)
+    if offset:
+        x -= offsetMeasure
+        y -= offsetMeasure
+        w += 2 * offsetMeasure
+        h += 2 * offsetMeasure
+    x = max(x, 0)
+    y = max(y, 0)
+    w = min(w, image.shape[1] - x)
+    h = min(h, image.shape[0] - y)
+    cropped_image = image[y:y + h, x:x + w]
+    cv2.imwrite(image_path, cropped_image)
+
+def remove_line(image_path):
+    image = cv2.imread(image_path)
+    edges = cv2.Canny(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), 50, 200, None, 3)
+    # Detect lines using Hough Transform
+    lines = cv2.HoughLines(edges, rho=1, theta=np.pi/180, threshold=200)
+    # Create a mask for the lines
+    mask = np.ones_like(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)) * 255  # White background
+    if lines is not None:
+        for line in lines:
+            rho, theta = line[0]  # Extract rho and theta from HoughLines
+            a = np.cos(theta)
+            b = np.sin(theta)
+            x0 = int(a * rho)
+            y0 = int(b * rho)
+            x1 = int(x0 + 1000 * (-b))  # Extend the detected line
+            y1 = int(y0 + 1000 * (a))
+            x2 = int(x0 - 1000 * (-b))
+            y2 = int(y0 - 1000 * (a))
+            cv2.line(mask, (x1, y1), (x2, y2), 0, thickness=5)  # Draw black lines on the mask
+    inpainted = cv2.inpaint(image, (255 - mask), inpaintRadius=1, flags=cv2.INPAINT_TELEA)
+    cv2.imwrite(image_path, inpainted)
+    
 
 def get_content_from_bitext(file_path):
     image_paths = pdf_to_images(pdf_path=file_path)
@@ -210,6 +257,8 @@ def get_content_from_bitext(file_path):
             try:
                 sn_page_content = ast.literal_eval(page_content)
                 if isinstance(sn_page_content, list):
+                    # remove_line(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
+                    remove_white_space_area(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
                     resize_image(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
                     shutil.copy(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"), os.path.join(os.environ['OUTPUT_FOLDER'],'images_label', f"{base_file_name}_{page_number+1:03}.png"))
                     sn_content.append({'page_number': sn_page_number, 'file_page_number': page_number+1, 'content': sn_page_content})
@@ -223,22 +272,26 @@ def get_content_from_bitext(file_path):
         else:
             page_content = extract_page_content(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
             try:
-                if langdetect.detect(page_content)!='vi':
+                if langdetect.detect(page_content)=='vi':
+                    vn_page_content = clean_text(page_content)
+                    vn_content.append({'page_number': vn_page_number, 'content': vn_page_content})
+                    vn_page_number = vn_page_number + 1
+                    with open(txt_file, 'w', encoding='utf-8') as file:
+                        file.write(vn_page_content)
+                else:
+                    # remove_line(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
+                    remove_white_space_area(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
                     resize_image(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
                     shutil.copy(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"), os.path.join(os.environ['OUTPUT_FOLDER'],'images_label', f"{base_file_name}_{page_number+1:03}.png"))
                     sn_page_content = sn.extract_pages(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
                     sn_content.append({'page_number': sn_page_number, 'file_page_number': page_number+1, 'content': sn_page_content})
                     sn_page_number = sn_page_number + 1
                     with open(txt_file, 'w', encoding='utf-8') as file:
-                        file.write(str(sn_page_content))
-                else:
-                    vn_page_content = clean_text(page_content)
-                    vn_content.append({'page_number': vn_page_number, 'content': vn_page_content})
-                    vn_page_number = vn_page_number + 1
-                    with open(txt_file, 'w', encoding='utf-8') as file:
-                        file.write(vn_page_content)
+                        file.write(str(sn_page_content)) 
             except:
                 try:
+                    # remove_line(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
+                    remove_white_space_area(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
                     resize_image(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
                     shutil.copy(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"), os.path.join(os.environ['OUTPUT_FOLDER'],'images_label', f"{base_file_name}_{page_number+1:03}.png"))
                     sn_page_content = sn.extract_pages(os.path.join('images', f"{base_file_name}_{page_number+1:03}.png"))
