@@ -6,13 +6,12 @@ import ssl
 import time
 import json
 import os
-
+from PIL import Image
 from dotenv import load_dotenv
 
 load_dotenv('.env')
 context = ssl._create_unverified_context()
 conn = http.client.HTTPSConnection(os.environ['SN_DOMAIN'], context=context)
-print(os.environ['SN_DOMAIN'])
 def upload_image_api(image_path):
     dataList = []
     boundary = 'wL36Yn8afVp8Ag7AmP8qZ0SA4n1v9T'
@@ -76,16 +75,20 @@ def extract_pages(image_path: str) -> list:
             - 'content': The text content within the bounding box.
             - 'transliteration': The transliterated version of the text content.
     """
+    main_image = Image.open(image_path)  # replace with your image path
+    # Get width and height
+    main_image_width, main_image_height = main_image.size
+    # Calculate area
+    main_image_area = float(main_image_width * main_image_height)
     page_content = list()
     try:
         text_lines = ocr_image_api(upload_image_api(image_path))
         transliterate_text = sn_transliteration_api('\n'.join([text_line['text'] for text_line in text_lines]))
     except:
-        # print('Change server!')
-        # time.sleep(60)
         text_lines = ocr_image_api(upload_image_api(image_path))
         transliterate_text = sn_transliteration_api('\n'.join([text_line['text'] for text_line in text_lines]))           
     for line_id, text_line in enumerate(text_lines):
-        page_content.append({'bbox': text_line['position'], 'content': text_line['text'], 'transliteration': transliterate_text[line_id]})
+        bbox = core.sort_boxes.normalize_bbox(text_line['position'])
+        if (core.sort_boxes.quadrilateral_area(bbox)/main_image_area) > 0.004:
+            page_content.append({'bbox': bbox, 'content': text_line['text'], 'transliteration': transliterate_text[line_id]})
     return core.sort_boxes.sort(page_content)
-    

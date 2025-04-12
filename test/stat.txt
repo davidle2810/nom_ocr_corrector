@@ -1,7 +1,0 @@
-Number of sentence: 2756
-Number of Sino-Nôm character: 64597
-Number of QN word: 63942
-Number of wrong SN character: 12133
-Number of replaced SN character: 2763
-Number of insert character: 433, rate:0.006703097667074323%
-Number of delete character: 1088, rate:0.006703097667074323%

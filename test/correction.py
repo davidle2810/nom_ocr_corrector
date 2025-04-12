@@ -180,7 +180,15 @@ if __name__ == '__main__':
                         stat.number_of_qn += 1
                         stat.number_of_insert += 1
                     corrected_list.pop(0)
-
+            start = 0
+            end = len(corrs)
+            # Find first non ('red', 'I') from the start
+            while start < end and corrs[start] == ('red', 'I'):
+                start += 1
+            # Find first non ('red', 'I') from the end
+            while end > start and corrs[end - 1] == ('red', 'I'):
+                end -= 1
+            corrs[start:end]
             # Write row data
             worksheet.write(index + 1, 0, row["Img_Box_ID"], font_format)
             worksheet.write(index + 1, 1, row["Img_Box_Coordinate"], font_format)
@@ -188,7 +196,7 @@ if __name__ == '__main__':
             worksheet.write_rich_string(index + 1, 2, *ocrs)
             if len(corrs)>0:
                 corrs.extend((' ',' '))
-                worksheet.write_rich_string(index + 1, 3, *corrs)
+                worksheet.write_rich_string(index + 1, 3, *corrs[start:end])
             if len(qns)>0:
                 qns.extend((' ',' '))
                 worksheet.write_rich_string(index + 1, 4, *qns)
