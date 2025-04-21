@@ -176,6 +176,6 @@ def extract_pages(image_path: str) -> list:
         transliterate_text = sn_transliteration_api('\n'.join([text_line['text'] for text_line in text_lines]))           
     for line_id, text_line in enumerate(text_lines):
         bbox = core.sort_boxes.normalize_bbox(text_line['position'])
-        if (core.sort_boxes.quadrilateral_area(bbox)/main_image_area) > 0.004:
+        if (core.sort_boxes.quadrilateral_area(bbox)/main_image_area) > 0.005:
             page_content.append({'bbox': bbox, 'content': text_line['text'], 'transliteration': transliterate_text[line_id]})
     return core.sort_boxes.sort(page_content)
