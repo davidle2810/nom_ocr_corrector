@@ -127,7 +127,6 @@ def align_bboxes(input_file):
                         stat.number_of_qn += 1
                         stat.number_of_insert += 1
                     corrected_list.pop(0)
-                #worksheet.write(row_id, 0, f'{os.path.splitext(os.path.basename(input_file))[0] }_{file_page_number:03}.png', font_format)
                 worksheet.write(row_id, 0, f'{os.path.splitext(os.path.basename(input_file))[0] }_{file_page_number:03}_{bbox_id:02}.png', font_format)
                 worksheet.write(row_id, 1, str(bbox), font_format)
                 ocrs.extend((' ',' '))

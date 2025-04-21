@@ -30,3 +30,4 @@ dependencies:
     - flask-cors==5.0.0
     - openpyxl==3.1.5
     - langdetect==1.0.9
+    - deskew==1.5.1

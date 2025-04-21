@@ -3,7 +3,10 @@ import http.client
 import mimetypes
 from codecs import encode
 import ssl
-import time
+import math
+import cv2
+import numpy as np
+from deskew import determine_skew
 import json
 import os
 from PIL import Image
@@ -64,6 +67,89 @@ def sn_transliteration_api(text: str) -> str:
         result_text = data['data']['result_text_transcription']
     return result_text
 
+def remove_small_dots(image, max_area=5):
+    contours, _ = cv2.findContours(255 - image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    for c in contours:
+        if cv2.contourArea(c) < max_area:
+            cv2.drawContours(image, [c], -1, 255, -1)
+    return image
+
+def rotate(image, angle, background):
+    old_width, old_height = image.shape[:2]
+    angle_radian = math.radians(angle)
+    width = abs(np.sin(angle_radian) * old_height) + abs(np.cos(angle_radian) * old_width)
+    height = abs(np.sin(angle_radian) * old_width) + abs(np.cos(angle_radian) * old_height)
+
+    image_center = tuple(np.array(image.shape[1::-1]) / 2)
+    rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
+    rot_mat[1, 2] += (width - old_width) / 2
+    rot_mat[0, 2] += (height - old_height) / 2
+    return cv2.warpAffine(image, rot_mat, (int(round(height)), int(round(width))), borderValue=background)
+
+def deskew(image):
+    angle = determine_skew(image)
+    rotated = rotate(image, angle, (0, 0, 0))
+    return rotated
+
+def resize_image(image_path, max_size=1200):
+    with Image.open(image_path) as img:
+        width, height = img.size
+        total_size = width + height
+
+        if total_size > max_size:
+            scale_factor = max_size / total_size
+            new_width = int(width * scale_factor)
+            new_height = int(height * scale_factor)
+            img = img.resize((new_width, new_height), Image.LANCZOS)
+            img.save(image_path)
+
+
+def sn_image_cleaning(image_path, kernel_size=50, offset=True, offsetMeasure=10):
+    # Load the image
+    image = cv2.imread(image_path)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    deskewed = deskew(gray)
+    blurred = cv2.medianBlur(deskewed, 5)
+    _, binary = cv2.threshold(blurred, 240, 255, cv2.THRESH_BINARY_INV)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
+    expanded = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+    # Connected Components with Area and Size Filtering
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(expanded, connectivity=8)
+
+    # Define thresholds
+    min_area = 10          # Keep very small components
+    min_width = 1
+    min_height = 1
+
+    # Initialize clean mask
+    filtered = np.zeros(binary.shape, dtype=np.uint8)
+
+    # Loop through components (excluding background)
+    for label in range(1, num_labels):
+        x, y, w, h, area = stats[label]
+        
+        if area >= min_area and w >= min_width and h >= min_height:
+            filtered[labels == label] = 255
+    # Find contours in the binary mask
+    enhanced = cv2.detailEnhance(cv2.cvtColor(filtered, cv2.COLOR_GRAY2BGR), sigma_s=50, sigma_r=0.2)
+    contours, _ = cv2.findContours(cv2.cvtColor(enhanced, cv2.COLOR_BGR2GRAY), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return    
+    largest_contour = max(contours, key=cv2.contourArea)
+    x, y, w, h = cv2.boundingRect(largest_contour)
+    if offset:
+        x -= offsetMeasure
+        y -= offsetMeasure
+        w += 2 * offsetMeasure
+        h += 2 * offsetMeasure
+    x = max(x, 0)
+    y = max(y, 0)
+    w = min(w, image.shape[1] - x)
+    h = min(h, image.shape[0] - y)
+    cropped_image = image[y:y + h, x:x + w]
+    cv2.imwrite(image_path, cropped_image)
+    resize_image(image_path)
+
 def extract_pages(image_path: str) -> list:
     """
     Extracts the NS text from each page of the provided file.
@@ -75,6 +161,7 @@ def extract_pages(image_path: str) -> list:
             - 'content': The text content within the bounding box.
             - 'transliteration': The transliterated version of the text content.
     """
+    sn_image_cleaning(image_path)
     main_image = Image.open(image_path)  # replace with your image path
     # Get width and height
     main_image_width, main_image_height = main_image.size
